@@ -1,16 +1,3 @@
-(* ---------------------------------------------------------------------
-   This file contains definitions and proof scripts related to the 
-   correctness of simplification  algorithms for context-free grammars, 
-   namely empty rules elimination, unit rules elimination, useless symbol
-   elimination and inaccessible symbol elimination.
-
-   More information can be found in the paper "Formalization of 
-   simplification for context-free grammars", LSFA 2015.
-
-   Marcus Vinícius Midena Ramos
-   mvmramos@gmail.com
-   --------------------------------------------------------------------- *)
-
 (* --------------------------------------------------------------------- *)
 (* SIMPLIFICATION - EMPTY RULES                                          *)
 (* --------------------------------------------------------------------- *)
@@ -1742,7 +1729,7 @@ Proof.
 intros g.
 destruct (rules_finite (g_emp g)) as [n [ntl H1]].
 destruct H1 as [H H1].
-exists n, (New_ss :: map non_terminal_lift ntl).
+exists (S n), (New_ss :: map non_terminal_lift ntl).
 split.
 - simpl; left; reflexivity.
 - intros left right H2.
@@ -1752,7 +1739,7 @@ split.
     destruct H1 as [H3 [H4 H5]].
     split. 
     * apply length_map_le. 
-      exact H3.
+      omega.
     * {
       split.
       - apply in_cons.
@@ -1783,7 +1770,7 @@ split.
   + split.
     * subst.
       simpl.
-      admit.
+      omega.
     * {
       split.
       - simpl. 
