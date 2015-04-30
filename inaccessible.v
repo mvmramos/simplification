@@ -1,16 +1,3 @@
-(* ---------------------------------------------------------------------
-   This file contains definitions and proof scripts related to the 
-   correctness of simplification  algorithms for context-free grammars, 
-   namely empty rules elimination, unit rules elimination, useless symbol
-   elimination and inaccessible symbol elimination.
-
-   More information can be found in the paper "Formalization of 
-   simplification for context-free grammars", LSFA 2015.
-
-   Marcus Vinícius Midena Ramos
-   mvmramos@gmail.com
-   --------------------------------------------------------------------- *)
-
 (* --------------------------------------------------------------------- *)
 (* SIMPLIFICATION - INACESSIBLE SYMBOLS                                  *)
 (* --------------------------------------------------------------------- *)
@@ -36,6 +23,7 @@ Variables terminal non_terminal: Type.
 Notation sf := (list (non_terminal + terminal)).
 Notation sentence := (list terminal).
 Notation nlist:= (list non_terminal).
+Notation tlist:= (list terminal).
 
 (* --------------------------------------------------------------------- *)
 (* SIMPLIFICATION - INACCESSIBLE SYMBOLS - DEFINITIONS                   *)
@@ -53,17 +41,19 @@ Lemma g_acc_finite:
 forall g: cfg _ _,
 exists n: nat,
 exists ntl: nlist,
+exists tl: tlist,
 In (start_symbol g) ntl /\
 forall left: non_terminal,
 forall right: sf,
 g_acc_rules g left right ->
 (length right <= n) /\
 (In left ntl) /\
-(forall s: non_terminal, In (inl s) right -> In s ntl).
+(forall s: non_terminal, In (inl s) right -> In s ntl) /\
+(forall s: terminal, In (inr s) right -> In s tl).
 Proof.
 intros g.
-destruct (rules_finite g) as [n [ntl H1]].
-exists n, ntl.
+destruct (rules_finite g) as [n [ntl [tl H1]]].
+exists n, ntl, tl.
 split.
 - destruct H1 as [H1 _].
   exact H1.
