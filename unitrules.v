@@ -42,6 +42,7 @@ Notation sf := (list (non_terminal + terminal)).
 Notation sentence := (list terminal).
 Notation term_lift:= ((terminal_lift non_terminal) terminal).
 Notation nlist:= (list non_terminal).
+Notation tlist:= (list terminal).
 
 Inductive unit (g: cfg non_terminal terminal) (a: non_terminal): non_terminal -> Prop:=
 | unit_rule: forall (b: non_terminal),
@@ -97,17 +98,19 @@ Lemma g_unit_finite:
 forall g: cfg _ _,
 exists n: nat,
 exists ntl: nlist,
+exists tl: tlist,
 In (start_symbol g) ntl /\
 forall left: non_terminal,
 forall right: sf,
 g_unit_rules g left right ->
 (length right <= n) /\
 (In left ntl) /\
-(forall s: non_terminal, In (inl s) right -> In s ntl).
+(forall s: non_terminal, In (inl s) right -> In s ntl) /\
+(forall s: terminal, In (inr s) right -> In s tl).
 Proof.
 intros g.
-destruct (rules_finite g) as [n [ntl H1]].
-exists n, ntl.
+destruct (rules_finite g) as [n [ntl [tl H1]]].
+exists n, ntl, tl.
 split.
 - destruct H1 as [H1 _].
   exact H1.
@@ -139,7 +142,7 @@ split.
       - specialize (H1 b right H0).
         destruct H1 as [_ [_ H1]].
         exact H1.
-      }   
+      }  
 Qed.
 
 Definition g_unit (g: cfg _ _): cfg _ _ := {|
