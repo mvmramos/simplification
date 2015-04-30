@@ -1,3 +1,16 @@
+(* ---------------------------------------------------------------------
+   This file contains definitions and proof scripts related to the 
+   correctness of simplification  algorithms for context-free grammars, 
+   namely empty rules elimination, unit rules elimination, useless symbol
+   elimination and inaccessible symbol elimination.
+
+   More information can be found in the paper "Formalization of 
+   simplification for context-free grammars", LSFA 2015.
+
+   Marcus Vinícius Midena Ramos
+   mvmramos@gmail.com
+   --------------------------------------------------------------------- *)
+   
 (* --------------------------------------------------------------------- *)
 (* CONTEXT FREE GRAMMARS                                                 *)
 (* --------------------------------------------------------------------- *)
