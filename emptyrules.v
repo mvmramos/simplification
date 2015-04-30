@@ -31,6 +31,7 @@ Notation sf := (list (non_terminal + terminal)).
 Notation sentence := (list terminal).
 Notation term_lift:= ((terminal_lift non_terminal) terminal).
 Notation nlist:= (list non_terminal).
+Notation tlist:= (list terminal).
 
 Definition empty (g: cfg _ _) (s: non_terminal + terminal): Prop:=
 derives g [s] [].
@@ -56,17 +57,19 @@ Lemma g_emp_finite:
 forall g: cfg _ _,
 exists n: nat,
 exists ntl: nlist,
+exists tl: tlist,
 In (start_symbol g) ntl /\
 forall left: non_terminal,
 forall right: sf,
 g_emp_rules g left right ->
 (length right <= n) /\
 (In left ntl) /\
-(forall s: non_terminal, In (inl s) right -> In s ntl).
+(forall s: non_terminal, In (inl s) right -> In s ntl) /\
+(forall s: terminal, In (inr s) right -> In s tl).
 Proof.
 intros g.
-destruct (rules_finite g) as [n [ntl H1]].
-exists n, ntl.
+destruct (rules_finite g) as [n [ntl [tl H1]]].
+exists n, ntl, tl.
 split.
 - destruct H1 as [H1 _].
   exact H1.
@@ -90,10 +93,23 @@ split.
     * {
       split.
       - exact H5.
-      - intros s0 H7.
-        apply H6.
-        apply in_app_cons.
-        exact H7.
+      - split.
+        + intros s0 H7.
+          apply H6.
+          apply in_app_cons.
+          exact H7.
+        + destruct H6 as [_ H6].
+          intros s0 H7.
+          apply H6.
+          apply in_or_app.
+          apply in_app_or in H7.
+          destruct H7 as [H7 | H7].
+          * left.
+            exact H7.
+          * right.
+            simpl. 
+            right.
+            exact H7.
       }
 Qed.
 
@@ -1396,6 +1412,7 @@ Inductive non_terminal': Type:=
 Notation sf' := (list (non_terminal' + terminal)).
 Notation term_lift':= ((terminal_lift non_terminal') terminal).
 Notation nlist:= (list non_terminal).
+Notation tlist:= (list terminal).
 Notation nlist':= (list non_terminal').
 
 Definition non_terminal_lift (n: non_terminal): non_terminal':=
@@ -1473,7 +1490,7 @@ induction n,s.
   exact IHn.
 Qed.
 
-Lemma in_map_exists:
+Lemma in_inl_map_exists:
 forall s': non_terminal',
 forall l: sf,
 In (inl s') (map symbol_lift l) ->
@@ -1511,6 +1528,49 @@ destruct s1'0.
       reflexivity.
   + simpl in H0.
     inversion H0.
+Qed.
+
+Lemma in_inr_map_exists:
+forall s': terminal,
+forall l: sf,
+In (inr s') (map symbol_lift l) ->
+exists s: terminal,
+s' = s /\
+In (inr s) l.
+Proof.
+admit.
+(*
+intros s' l H.
+apply in_split in H.
+destruct H as [l1 [l2 H]].
+symmetry in H.
+apply map_expand in H.
+destruct H as [s1' [s2' [H1 [H2 H3]]]].
+change (inl s' :: l2) with ([inl s'] ++ l2) in H3.
+symmetry in H3.
+apply map_expand in H3.
+destruct H3 as [s1'0 [s2'0 [H4 [H5 H6]]]].
+destruct s1'0.
+- inversion H5.
+- inversion H5.
+  destruct s.
+  + simpl in H0. 
+    inversion H0. 
+    exists n.
+    split. 
+    * reflexivity.
+    * rewrite H1. 
+      apply in_or_app.
+      right.
+      rewrite H4.
+      apply in_or_app.
+      left.
+      simpl. 
+      left.
+      reflexivity.
+  + simpl in H0.
+    inversion H0.
+*)
 Qed.
 
 Lemma in_lift_map:
@@ -1565,18 +1625,20 @@ Lemma g_emp'_finite:
 forall g: cfg _ _,
 exists n: nat,
 exists ntl: nlist',
+exists tl: tlist,
 In New_ss ntl /\
 forall left: non_terminal',
 forall right: sf',
 g_emp'_rules g left right ->
 (length right <= n) /\
 (In left ntl) /\
-(forall s: non_terminal', In (inl s) right -> In s ntl).
+(forall s: non_terminal', In (inl s) right -> In s ntl) /\
+(forall s: terminal, In (inr s) right -> In s tl).
 Proof.
 intros g.
-destruct (rules_finite (g_emp g)) as [n [ntl H1]].
+destruct (rules_finite (g_emp g)) as [n [ntl [tl H1]]].
 destruct H1 as [H H1].
-exists (S n), (New_ss :: map non_terminal_lift ntl).
+exists (S n), (New_ss :: map non_terminal_lift ntl), tl.
 split.
 - simpl; left; reflexivity.
 - intros left right H2.
@@ -1592,14 +1654,23 @@ split.
       - apply in_cons.
         apply in_lift_map. 
         exact H4.
-      - intros s' H6.
-        apply in_cons.
-        apply in_map_exists in H6. 
-        destruct H6 as [s [H7 H8]].
-        rewrite H7.
-        specialize (H5 s H8).
-        apply in_lift_map.
-        exact H5.
+      - split.
+        + destruct H5 as [H5 _].
+          intros s' H6.
+          apply in_cons.
+          apply in_inl_map_exists in H6. 
+          destruct H6 as [s [H7 H8]].
+          rewrite H7.
+          specialize (H5 s H8).
+          apply in_lift_map.
+          exact H5.
+        + destruct H5 as [_ H5].
+          intros s H6.
+          apply H5.
+          apply in_inr_map_exists in H6.
+          destruct H6 as [s0 [H6 H7]].
+          subst.
+          exact H7.
       } 
   + subst.
     split.
@@ -1610,9 +1681,13 @@ split.
       - simpl. 
         left. 
         reflexivity.
-      - intros s H3.
-        simpl in H3.
-        contradiction.
+      - split.
+        + intros s H3.
+          simpl in H3.
+          contradiction.
+        + intros s H3.
+          simpl in H3.
+          contradiction.
       }
   + split.
     * subst.
@@ -1623,16 +1698,22 @@ split.
       - simpl. 
         left.
         reflexivity.
-      - intros s H4.
-        simpl in H4.
-        destruct H4 as [H4 | H4].
-        + inversion H4.
-          apply in_cons.
-          apply in_lift_map.
-          simpl in H.
-          exact H.
-        + contradiction.
-        }
+      - split.
+        + intros s H4.
+          simpl in H4.
+          destruct H4 as [H4 | H4].
+          * inversion H4.
+            apply in_cons.
+            apply in_lift_map.
+            simpl in H.
+            exact H.
+          * contradiction.
+        + intros s H4.
+          simpl in H4.
+          destruct H4 as [H4 | H4].
+          * inversion H4.
+          * contradiction.
+          }
 Qed.
 
 Definition g_emp' (g: cfg non_terminal terminal): cfg non_terminal' terminal := {|
@@ -1652,17 +1733,19 @@ Lemma g_map_finite:
 forall g: cfg _ _,
 exists n: nat,
 exists ntl: nlist',
+exists tl: tlist,
 In (non_terminal_lift (start_symbol g)) ntl /\
 forall left: non_terminal',
 forall right: sf',
 g_map_rules g left right ->
 (length right <= n) /\
 (In left ntl) /\
-(forall s: non_terminal', In (inl s) right -> In s ntl).
+(forall s: non_terminal', In (inl s) right -> In s ntl) /\
+(forall s: terminal, In (inr s) right -> In s tl).
 Proof.
 intros g.
-destruct (rules_finite g) as [n [ntl H1]].
-exists n, (map non_terminal_lift ntl).
+destruct (rules_finite g) as [n [ntl [tl H1]]].
+exists n, (map non_terminal_lift ntl), tl.
 split.
 - destruct H1 as [H1 _]. 
   apply in_lift_map. 
@@ -1679,13 +1762,24 @@ split.
   + split.
     * apply in_lift_map.
       exact H5.
-    * intros s H7.
-      apply in_map_exists in H7.
-      destruct H7 as [s0 [H8 H9]].
-      rewrite H8.
-      apply in_lift_map.
-      specialize (H6 s0 H9).
-      exact H6.
+    * {
+      split.
+      - destruct H6 as [H6 _].
+        intros s H7.
+        apply in_inl_map_exists in H7.
+        destruct H7 as [s0 [H8 H9]].
+        rewrite H8.
+        apply in_lift_map.
+        specialize (H6 s0 H9).
+        exact H6.
+      - destruct H6 as [_ H6].
+        intros s H7.
+        apply in_inr_map_exists in H7.
+        destruct H7 as [s0 [H8 H9]].
+        subst.
+        apply H6.
+        exact H9.
+      }
 Qed.
 
 Definition g_map (g: cfg non_terminal terminal): cfg non_terminal' terminal := {|
