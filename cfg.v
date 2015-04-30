@@ -1,16 +1,3 @@
-(* ---------------------------------------------------------------------
-   This file contains definitions and proof scripts related to the 
-   correctness of simplification  algorithms for context-free grammars, 
-   namely empty rules elimination, unit rules elimination, useless symbol
-   elimination and inaccessible symbol elimination.
-
-   More information can be found in the paper "Formalization of 
-   simplification for context-free grammars", LSFA 2015.
-
-   Marcus Vinícius Midena Ramos
-   mvmramos@gmail.com
-   --------------------------------------------------------------------- *)
-
 (* --------------------------------------------------------------------- *)
 (* CONTEXT FREE GRAMMARS                                                 *)
 (* --------------------------------------------------------------------- *)
@@ -40,19 +27,23 @@ Variables non_terminal terminal: Type.
 Notation sf := (list (non_terminal + terminal)).
 Notation sentence := (list terminal).
 Notation nlist:= (list non_terminal).
+Notation tlist:= (list terminal).
+Notation symbol:= (non_terminal + terminal)%type.
 
 Record cfg: Type:= {
 start_symbol: non_terminal;
 rules: non_terminal -> sf -> Prop;
 rules_finite: exists n: nat,
               exists ntl: nlist,
+              exists tl: tlist,
               In start_symbol ntl /\
               forall left: non_terminal,
               forall right: sf,
               rules left right ->
               (length right <= n) /\
               (In left ntl) /\
-              (forall s: non_terminal, In (inl s) right -> In s ntl)
+              (forall s: non_terminal, In (inl s) right -> In s ntl) /\
+              (forall s: terminal, In (inr s) right -> In s tl)
 }.
 
 Inductive derives (g: cfg): sf -> sf -> Prop :=
@@ -239,7 +230,7 @@ End ContextFreeGrammars_Definitions.
 (* CONTEXT-FREE GRAMMARS - DEFINITIONS 2                                 *)
 (* --------------------------------------------------------------------- *)
 
-Section ContectFreeGrammars_Definitions_2.
+Section ContextFreeGrammars_Definitions_2.
 
 Variables non_terminal non_terminal' terminal: Type.
 
@@ -254,7 +245,7 @@ forall s: sentence,
 s <> [] ->
 (produces g1 s <-> produces g2 s).
 
-End ContectFreeGrammars_Definitions_2.
+End ContextFreeGrammars_Definitions_2.
 
 (* --------------------------------------------------------------------- *)
 (* CONTEXTT-FREE GRAMMARS - LEMMAS AND THEOREMS                          *)
@@ -267,6 +258,7 @@ Variables non_terminal terminal: Type.
 Notation sf := (list (non_terminal + terminal)).
 Notation sentence := (list terminal).
 Notation term_lift:= ((terminal_lift non_terminal) terminal).
+Notation symbol:= (non_terminal + terminal)%type.
 
 Theorem derives_rule:
 forall g: cfg _ _,
@@ -4371,7 +4363,7 @@ induction H1.
   contradiction.
 Qed.
 
-Lemma sf_single: 
+Lemma sf_eq_1: 
 forall s: sf,
 length s = 1 ->
 (exists t: terminal, s = [inr t]) \/
@@ -4392,6 +4384,22 @@ destruct s.
   + simpl in H.
     omega.
 Qed. 
+
+Lemma sf_ge_2:
+forall s: sf,
+length s >= 2 ->
+exists s1 s2: symbol,
+exists s': sf,
+s = s1 :: s2 :: s'.
+Proof.
+intros s H.
+destruct s.
+- simpl in H; omega.
+- destruct s0.
+  + simpl in H; omega.
+  + exists s, s0, s1.
+    reflexivity.
+Qed.
 
 End ContextFreeGrammars_Lemmas.
 
