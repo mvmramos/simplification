@@ -22,6 +22,7 @@
 To compile use, download all files and:
 
 > coq_makefile -f > _makefile
+
 > make -f _makefile
 
 These files have been created and compiled with the Coq Proof Assistant, version 8.4pl4 (June 2014).
